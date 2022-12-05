@@ -2,9 +2,9 @@ package com.best.deskclock
 
 import android.app.DialogFragment
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.Editable
-import android.text.SpannableStringBuilder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +21,13 @@ class TasksDialogFragment : DialogFragment() {
     companion object {
         const val BUNDLE_ARG_ALARM_UUID = "${BuildConfig.APPLICATION_ID}.task_uuid"
         const val delimiter = "~~~~~~~~~~"
+        val listOfPrefs = mutableListOf<SharedPreferences>()
+        fun getPrefs(context: Context) =
+            if (listOfPrefs.isNotEmpty()) listOfPrefs.first() else context.getSharedPreferences(
+                "tasks",
+                Context.MODE_PRIVATE
+            ).also { listOfPrefs.add(it) }
+
         fun newInstance(alarmUUID: Long): TasksDialogFragment {
             val args = Bundle()
             args.putString(BUNDLE_ARG_ALARM_UUID, alarmUUID.toString())
@@ -36,10 +43,11 @@ class TasksDialogFragment : DialogFragment() {
         var isComplete: Boolean
     )
 
-    val alarmID by lazy { arguments?.getString(BUNDLE_ARG_ALARM_UUID).also { println("Alarm id: $it") } }
-    val prefs by lazy { context.getSharedPreferences("tasks", Context.MODE_PRIVATE) }
+    val alarmID by lazy {
+        arguments?.getString(BUNDLE_ARG_ALARM_UUID).also { println("Alarm id: $it") }
+    }
     val tasks by lazy {
-        prefs
+        getPrefs(context)
             .getString(
                 alarmID, null
             )
@@ -61,16 +69,19 @@ class TasksDialogFragment : DialogFragment() {
     val adapter =
         object : ListAdapter<Task, TaskViewHolder>(object : DiffUtil.ItemCallback<Task>() {
             override fun areItemsTheSame(oldItem: Task, newItem: Task): Boolean {
-                return oldItem.uuid == newItem.uuid
+                println("areItemsTheSame($oldItem, $newItem) == ${oldItem === newItem},")
+                return oldItem === newItem
             }
 
             override fun areContentsTheSame(oldItem: Task, newItem: Task): Boolean {
+                println("areContentsTheSame($oldItem, $newItem)")
                 return oldItem.text == newItem.text &&
                         oldItem.isComplete == newItem.isComplete
             }
 
         }) {
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
+                println("onCreateViewHolder()")
                 return TaskViewHolder(
                     LayoutInflater.from(parent.context)
                         .inflate(R.layout.item_task, parent, false)
@@ -79,10 +90,10 @@ class TasksDialogFragment : DialogFragment() {
 
             override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
                 val task = getItem(position)
+                println("onBindViewHolder(). position = $position, task = $task")
                 holder.checkbox.setOnCheckedChangeListener { buttonView, isChecked ->
                     task.isComplete = isChecked
                     setTaskComplete(holder, isChecked)
-                    submitList(tasks.toList())
                 }
                 setTaskComplete(holder, task.isComplete)
                 holder.taskTest.text = task.text
@@ -92,7 +103,7 @@ class TasksDialogFragment : DialogFragment() {
                 holder: TaskViewHolder,
                 complete: Boolean
             ) {
-                if(complete) {
+                if (complete) {
                     holder.checkbox.isChecked = true
                     holder.taskTest.isEnabled = false
                 } else {
@@ -101,6 +112,7 @@ class TasksDialogFragment : DialogFragment() {
                 }
             }
         }
+    var recycler: RecyclerView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater?,
@@ -110,7 +122,7 @@ class TasksDialogFragment : DialogFragment() {
         super.onCreateView(inflater, container, savedInstanceState)
 
         val view = inflater?.inflate(R.layout.tasks_dialog, container)
-        val recycler = view?.findViewById<RecyclerView>(R.id.tasks)
+        recycler = view?.findViewById(R.id.tasks)
         val add = view?.findViewById<Button>(R.id.add_task_button)
         val ok = view?.findViewById<Button>(R.id.ok_button)
         ok?.setOnClickListener {
@@ -122,7 +134,7 @@ class TasksDialogFragment : DialogFragment() {
         }
         recycler?.layoutManager = LinearLayoutManager(context!!)
         recycler?.adapter = adapter
-        adapter.submitList(tasks)
+        if(tasks.isNotEmpty()) adapter.submitList(tasks)
         return view
     }
 
@@ -135,7 +147,7 @@ class TasksDialogFragment : DialogFragment() {
         val data =
             tasks.joinToString("\n") { "${it.uuid}$delimiter${it.text}$delimiter${it.isComplete}" }
         println("Putting data into file $alarmID: $data")
-        prefs.edit()
+        getPrefs(context).edit()
             .putString(
                 alarmID,
                 data
@@ -144,9 +156,13 @@ class TasksDialogFragment : DialogFragment() {
     }
 
     fun createNewTask(randomUUID: UUID, text: Editable?) {
-        text?.toString()?.let {
-            tasks.add(Task(randomUUID.toString(), it, false))
-            adapter.submitList(tasks.toList())
+        println("createNewTask(randomUUID = $randomUUID, text = $text)")
+        tasks.add(Task(randomUUID.toString(), text!!.toString(), false))
+        println("Tasks: $tasks")
+        recycler?.post {
+            adapter.submitList(tasks.toList()) {
+                println("Done submitting list: ${adapter.currentList}")
+            }
         }
     }
 

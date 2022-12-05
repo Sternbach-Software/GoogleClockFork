@@ -33,9 +33,13 @@ import android.telephony.TelephonyManager;
 import com.best.deskclock.AlarmAlertWakeLock;
 import com.best.deskclock.LogUtils;
 import com.best.deskclock.R;
+import com.best.deskclock.TasksDialogFragment;
 import com.best.deskclock.data.DataModel;
 import com.best.deskclock.events.Events;
 import com.best.deskclock.provider.AlarmInstance;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * This service is in charge of starting/stopping the alarm. It will bring up and manage the
@@ -230,7 +234,7 @@ public class AlarmService extends Service {
                 fill++;
             } else {
                 if (average / BUFFER >= SENSITIVITY) {
-                    handleAction(mShakeAction);
+                    handleAction(mShakeAction); //TODO disable this to disable shake actions
                 }
                 average = 0;
                 fill = 0;
@@ -349,7 +353,19 @@ public class AlarmService extends Service {
                         LogUtils.e("Alarm already started for instance: %d", instanceId);
                         break;
                     }
-                    startAlarm(instance);
+                    String[] lines = TasksDialogFragment.Companion.getPrefs(this).getString(instance.mAlarmId.toString(), "").split("\n");
+                    System.out.println("Got lines: " + Arrays.toString(lines));
+                    ArrayList<TasksDialogFragment.Task> list = new ArrayList<>(lines.length);
+                    for (String line : lines) {
+                        String[] strings = line.split(TasksDialogFragment.delimiter);
+                        if(strings.length < 3) continue;
+                        list.add(new TasksDialogFragment.Task(strings[0], strings[1], Boolean.parseBoolean(strings[2])));
+                    }
+                    boolean incomplete = false;
+                    for(TasksDialogFragment.Task task : list) {
+                        if(!task.isComplete()) incomplete = true;
+                    }
+                    if(incomplete) startAlarm(instance);
                 }
                 break;
             case STOP_ALARM_ACTION:
