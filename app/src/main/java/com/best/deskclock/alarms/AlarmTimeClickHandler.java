@@ -22,10 +22,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Vibrator;
 
+
 import com.best.deskclock.AlarmClockFragment;
 import com.best.deskclock.LabelDialogFragment;
 import com.best.deskclock.LogUtils;
 import com.best.deskclock.R;
+import com.best.deskclock.TasksDialogFragment;
 import com.best.deskclock.alarms.dataadapter.AlarmItemHolder;
 import com.best.deskclock.data.DataModel;
 import com.best.deskclock.data.Weekdays;
@@ -190,6 +192,13 @@ public final class AlarmTimeClickHandler {
         final LabelDialogFragment fragment =
                 LabelDialogFragment.newInstance(alarm, alarm.label, mFragment.getTag());
         LabelDialogFragment.show(mFragment.getFragmentManager(), fragment);
+    }
+    public void onEditTasksClicked(Alarm alarm) {
+        Events.sendAlarmEvent(R.string.action_set_tasks, R.string.label_deskclock);
+        mFragment.getChildFragmentManager().beginTransaction().add(TasksDialogFragment.Companion.newInstance(alarm.id), "tasks_dialog_fragment").commit();
+//        final LabelDialogFragment fragment =
+//                LabelDialogFragment.newInstance(alarm, alarm.label, mFragment.getTag());
+//        LabelDialogFragment.show(mFragment.getFragmentManager(), fragment);
     }
 
     public void onTimeSet(int hourOfDay, int minute) {

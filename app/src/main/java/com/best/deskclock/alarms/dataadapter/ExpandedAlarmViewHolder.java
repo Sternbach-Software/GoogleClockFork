@@ -66,6 +66,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
     public final TextView ringtone;
     public final TextView delete;
     private final TextView editLabel;
+    private final TextView editTasks;
     private final CompoundButton[] dayButtons = new CompoundButton[7];
     private final View hairLine;
 
@@ -81,6 +82,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         vibrate = itemView.findViewById(R.id.vibrate_onoff);
         ringtone = itemView.findViewById(R.id.choose_ringtone);
         editLabel = itemView.findViewById(R.id.edit_label);
+        editTasks = itemView.findViewById(R.id.edit_tasks);
         repeatDays = itemView.findViewById(R.id.repeat_days);
         hairLine = itemView.findViewById(R.id.hairline);
 
@@ -109,6 +111,10 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         final Drawable labelIcon = Utils.getVectorDrawable(context, R.drawable.ic_label);
         editLabel.setCompoundDrawablesRelativeWithIntrinsicBounds(labelIcon, null, null, null);
 
+        // Cannot set in xml since we need compat functionality for API < 21
+        final Drawable taskIcon = Utils.getVectorDrawable(context, R.drawable.ic_task_alt);
+        editTasks.setCompoundDrawablesRelativeWithIntrinsicBounds(taskIcon, null, null, null);
+
         // Collapse handler
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -136,6 +142,13 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
             @Override
             public void onClick(View view) {
                 getAlarmTimeClickHandler().onEditLabelClicked(getItemHolder().item);
+            }
+        });
+        // Edit tasks handler
+        editTasks.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getAlarmTimeClickHandler().onEditTasksClicked(getItemHolder().item);
             }
         });
         // Vibrator checkbox handler
@@ -278,6 +291,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
                 ObjectAnimator.ofFloat(ringtone, TRANSLATION_Y, 0f),
                 ObjectAnimator.ofFloat(vibrate, TRANSLATION_Y, 0f),
                 ObjectAnimator.ofFloat(editLabel, TRANSLATION_Y, 0f),
+                ObjectAnimator.ofFloat(editTasks, TRANSLATION_Y, 0f),
                 ObjectAnimator.ofFloat(preemptiveDismissButton, TRANSLATION_Y, 0f),
                 ObjectAnimator.ofFloat(hairLine, TRANSLATION_Y, 0f),
                 ObjectAnimator.ofFloat(delete, TRANSLATION_Y, 0f),
@@ -302,6 +316,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         ringtone.setTranslationY(translationY);
         vibrate.setTranslationY(translationY);
         editLabel.setTranslationY(translationY);
+        editTasks.setTranslationY(translationY);
         preemptiveDismissButton.setTranslationY(translationY);
         hairLine.setTranslationY(translationY);
         delete.setTranslationY(translationY);
@@ -362,6 +377,8 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
                 .setDuration(shortDuration);
         final Animator editLabelAnimation = ObjectAnimator.ofFloat(editLabel, View.ALPHA, 0f)
                 .setDuration(shortDuration);
+        final Animator editTasksAnimation = ObjectAnimator.ofFloat(editTasks, View.ALPHA, 0f)
+                .setDuration(shortDuration);
         final Animator repeatDaysAnimation = ObjectAnimator.ofFloat(repeatDays, View.ALPHA, 0f)
                 .setDuration(shortDuration);
         final Animator vibrateAnimation = ObjectAnimator.ofFloat(vibrate, View.ALPHA, 0f)
@@ -390,6 +407,8 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         startDelay += delayIncrement;
         editLabelAnimation.setStartDelay(startDelay);
         startDelay += delayIncrement;
+        editTasksAnimation.setStartDelay(startDelay);
+        startDelay += delayIncrement;
         vibrateAnimation.setStartDelay(startDelay);
         ringtoneAnimation.setStartDelay(startDelay);
         startDelay += delayIncrement;
@@ -402,7 +421,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         final AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(backgroundAnimator, boundsAnimator, repeatAnimation,
                 repeatDaysAnimation, vibrateAnimation, ringtoneAnimation, editLabelAnimation,
-                deleteAnimation, hairLineAnimation, dismissAnimation);
+                editTasksAnimation, deleteAnimation, hairLineAnimation, dismissAnimation);
         return animatorSet;
     }
 
@@ -442,6 +461,8 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
                 .setDuration(longDuration);
         final Animator editLabelAnimation = ObjectAnimator.ofFloat(editLabel, View.ALPHA, 1f)
                 .setDuration(longDuration);
+        final Animator editTasksAnimation = ObjectAnimator.ofFloat(editTasks, View.ALPHA, 1f)
+                .setDuration(longDuration);
         final Animator hairLineAnimation = ObjectAnimator.ofFloat(hairLine, View.ALPHA, 1f)
                 .setDuration(longDuration);
         final Animator deleteAnimation = ObjectAnimator.ofFloat(delete, View.ALPHA, 1f)
@@ -468,6 +489,8 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         startDelay += delayIncrement;
         editLabelAnimation.setStartDelay(startDelay);
         startDelay += delayIncrement;
+        editTasksAnimation.setStartDelay(startDelay);
+        startDelay += delayIncrement;
         hairLineAnimation.setStartDelay(startDelay);
         if (preemptiveDismissButton.getVisibility() == View.VISIBLE) {
             dismissAnimation.setStartDelay(startDelay);
@@ -478,7 +501,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
         final AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(backgroundAnimator, repeatAnimation, boundsAnimator,
                 repeatDaysAnimation, vibrateAnimation, ringtoneAnimation, editLabelAnimation,
-                deleteAnimation, hairLineAnimation, dismissAnimation, arrowAnimation);
+                editTasksAnimation, deleteAnimation, hairLineAnimation, dismissAnimation, arrowAnimation);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -503,6 +526,7 @@ public final class ExpandedAlarmViewHolder extends AlarmItemViewHolder {
     private void setChangingViewsAlpha(float alpha) {
         repeat.setAlpha(alpha);
         editLabel.setAlpha(alpha);
+        editTasks.setAlpha(alpha);
         repeatDays.setAlpha(alpha);
         vibrate.setAlpha(alpha);
         ringtone.setAlpha(alpha);
