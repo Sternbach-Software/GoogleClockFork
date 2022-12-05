@@ -35,6 +35,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildToolsVersion '32.1.0-rc1'
+    namespace 'com.best.deskclock'
 }
 
 dependencies {
